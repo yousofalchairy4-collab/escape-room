@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><base href="https://d16ilfvy4mv02r.cloudfront.net/workspaces/BTubPA9cOLH87TfaDNvrQMFDgEgvl30m/255d6467-5213-447d-beb0-1c79b1364d5a/files/">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Escape Room: Guess Who I Am</title>
+<style>
+/* ═══════════════════════════════════════════
+   BASE & RESET
+═══════════════════════════════════════════ */
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --p:#7c3aed;--pl:#a78bfa;--c:#06b6d4;--a:#f59e0b;
+  --g:#10b981;--r:#ef4444;--bg:#080810;
+  --card:#ffffff09;--bord:#7c3aed40;
+}
+html{scroll-behavior:smooth;}
+body{
+  font-family:'Segoe UI',system-ui,sans-serif;
+  background:var(--bg);color:#dde0ff;
+  min-height:100vh;overflow-x:hidden;
+}
+
+/* ═══════════════════════════════════════════
+   SCREENS
+═══════════════════════════════════════════ */
+.screen{display:none;min-height:100vh;padding:28px 16px 80px;
+  flex-direction:column;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;}
+.screen.active{display:flex;animation:fadeUp .55s cubic-bezier(.22,1,.36,1);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+
+/* bg blobs */
+.blob{position:absolute;border-radius:50%;filter:blur(90px);pointer-events:none;z-index:0;}
+.blob-a{width:380px;height:380px;background:#7c3aed14;top:-100px;left:-120px;}
+.blob-b{width:300px;height:300px;background:#06b6d410;bottom:-80px;right:-100px;}
+.blob-c{width:200px;height:200px;background:#f59e0b0c;top:50%;right:5%;}
+
+/* ═══════════════════════════════════════════
+   PROGRESS BAR
+═══════════════════════════════════════════ */
+#prog-wrap{position:fixed;top:0;left:0;right:0;z-index:999;
+  display:none;height:3px;background:#1a1a2e;}
+#prog-fill{height:100%;background:linear-gradient(90deg,var(--p),var(--c));
+  transition:width .6s ease;}
+#prog-txt{position:fixed;top:10px;right:16px;z-index:999;display:none;
+  font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--pl);
+  text-transform:uppercase;}
+
+/* ═══════════════════════════════════════════
+   SHARED LAYOUT
+═══════════════════════════════════════════ */
+.z{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;width:100%;}
+.badge{display:inline-block;background:linear-gradient(135deg,var(--p),var(--c));
+  padding:4px 16px;border-radius:20px;font-size:10px;font-weight:800;
+  letter-spacing:3px;text-transform:uppercase;margin-bottom:14px;}
+h1{font-size:clamp(28px,7vw,58px);text-align:center;line-height:1.15;margin-bottom:10px;}
+h2{font-size:clamp(20px,4.5vw,36px);text-align:center;line-height:1.2;margin-bottom:8px;}
+.grad{background:linear-gradient(135deg,var(--pl),var(--c));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.sub{color:#7a8099;text-align:center;font-size:15px;line-height:1.7;margin-bottom:20px;}
+.card{background:var(--card);border:1px solid var(--bord);border-radius:18px;
+  padding:26px 22px;max-width:680px;width:100%;position:relative;
+  animation:glowPulse 5s ease-in-out infinite;}
+@keyframes glowPulse{
+  0%,100%{box-shadow:0 0 14px #7c3aed20;}
+  50%{box-shadow:0 0 30px #7c3aed44,0 0 55px #06b6d418;}}
+
+/* ═══════════════════════════════════════════
+   BUTTONS
+═══════════════════════════════════════════ */
+.btn{padding:11px 26px;border:none;border-radius:10px;cursor:pointer;
+  font-size:14px;font-weight:700;transition:all .22s;display:inline-flex;
+  align-items:center;gap:7px;margin:4px;}
+.btn-p{background:linear-gradient(135deg,var(--p),var(--c));color:#fff;
+  box-shadow:0 0 18px #7c3aed44;}
+.btn-p:hover{transform:translateY(-2px);box-shadow:0 0 28px #7c3aed77;}
+.btn-g{background:transparent;border:1px solid var(--p);color:var(--pl);}
+.btn-g:hover{background:#7c3aed1a;}
+.btn-a{background:linear-gradient(135deg,var(--a),#f97316);color:#fff;
+  font-size:12px;padding:8px 14px;}
+.btn-a:hover{transform:translateY(-2px);}
+.btn-next{margin-top:22px;align-self:flex-end;padding:12px 28px;font-size:14px;}
+
+/* ═══════════════════════════════════════════
+   INPUTS
+═══════════════════════════════════════════ */
+.inp{background:#ffffff0d;border:1px solid var(--bord);border-radius:9px;
+  padding:10px 14px;color:#dde0ff;font-size:14px;width:100%;
+  transition:border-color .22s,box-shadow .22s;font-family:inherit;}
+.inp:focus{outline:none;border-color:var(--p);box-shadow:0 0 10px #7c3aed30;}
+textarea.inp{min-height:80px;resize:vertical;}
+
+/* ═══════════════════════════════════════════
+   FEEDBACK CHIPS
+═══════════════════════════════════════════ */
+.fb{padding:10px 14px;border-radius:9px;margin:8px 0;font-weight:700;
+  font-size:13px;text-align:center;display:none;}
+.fb.ok{background:#10b98118;border:1px solid var(--g);color:#6ee7b7;display:block;}
+.fb.err{background:#ef444418;border:1px solid var(--r);color:#fca5a5;display:block;}
+.fb.warm{background:#f59e0b18;border:1px solid var(--a);color:#fcd34d;display:block;}
+
+/* ═══════════════════════════════════════════
+   MATH MODAL
+═══════════════════════════════════════════ */
+#m-overlay{position:fixed;inset:0;background:#00000099;z-index:4000;
+  display:none;align-items:center;justify-content:center;}
+#m-overlay.on{display:flex;}
+#m-box{background:#0e0920;border:1px solid var(--p);border-radius:20px;
+  padding:34px 28px;max-width:380px;width:92%;text-align:center;
+  box-shadow:0 0 60px #7c3aed44;animation:popIn .3s ease;}
+@keyframes popIn{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+#m-box h3{color:var(--pl);font-size:17px;margin-bottom:6px;}
+#m-box p{color:#64748b;font-size:12px;margin-bottom:14px;}
+#m-q{font-size:32px;font-weight:900;color:#e8eaff;letter-spacing:3px;margin:14px 0;}
+#m-inp{max-width:150px;font-size:20px;text-align:center;padding:10px;}
+#m-fb{min-height:42px;margin:10px 0;font-size:13px;line-height:1.5;font-weight:700;}
+
+/* ═══════════════════════════════════════════
+   CONFETTI
+═══════════════════════════════════════════ */
+#cvs{position:fixed;inset:0;pointer-events:none;z-index:9999;}
+
+/* ═══════════════════════════════════════════
+   INTRO
+═══════════════════════════════════════════ */
+#si{background:radial-gradient(ellipse at 50% 30%,#16083a,var(--bg) 68%);}
+.float-ico{font-size:62px;animation:fl 3.8s ease-in-out infinite;margin-bottom:14px;}
+@keyframes fl{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-18px) rotate(3deg)}}
+.stat-row{display:flex;gap:28px;flex-wrap:wrap;justify-content:center;margin-top:34px;}
+.stat{text-align:center;color:#3d4466;font-size:12px;line-height:2.2;}
+
+/* ═══════════════════════════════════════════
+   ROOM 1 – CIPHER
+═══════════════════════════════════════════ */
+#sr1{background:radial-gradient(ellipse at 20% 15%,#160838,var(--bg) 65%);}
+.cgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:12px;margin:14px 0;}
+.ci{background:#7c3aed0e;border:1px solid var(--bord);border-radius:13px;
+  padding:14px 10px;text-align:center;transition:border-color .3s,background .3s;}
+.ci.done{border-color:var(--g);background:#10b98110;}
+.cl{font-size:42px;font-weight:900;background:linear-gradient(135deg,var(--p),var(--c));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.htxt{color:var(--a);font-size:11px;min-height:16px;font-style:italic;margin:3px 0 7px;line-height:1.4;}
+
+/* ═══════════════════════════════════════════
+   ROOM 2 – LAB
+═══════════════════════════════════════════ */
+#sr2{background:radial-gradient(ellipse at 80% 10%,#011a1a,var(--bg) 65%);}
+.lab-scatter{position:absolute;pointer-events:none;z-index:0;inset:0;}
+.lab-scatter span{position:absolute;font-size:clamp(14px,2vw,22px);opacity:.18;
+  animation:drift 6s ease-in-out infinite alternate;}
+.cbtn{padding:10px 18px;border:1px solid var(--bord);border-radius:9px;
+  background:#7c3aed0e;color:#dde0ff;cursor:pointer;font-size:14px;font-weight:600;
+  transition:all .22s;}
+.cbtn:hover:not([disabled]){background:#7c3aed2a;transform:translateY(-2px);}
+.cbtn.right{background:#10b98120;border-color:var(--g);color:#6ee7b7;}
+.cbtn.wrong{background:#ef444420;border-color:var(--r);}
+.corner-tip{position:absolute;bottom:14px;right:14px;color:#7c3aed55;
+  font-size:10px;font-style:italic;max-width:120px;text-align:right;line-height:1.4;}
+
+/* ═══════════════════════════════════════════
+   ROOM 3 – PERSONALITY
+═══════════════════════════════════════════ */
+#sr3{background:radial-gradient(ellipse at 15% 80%,#1a001e,var(--bg) 65%);}
+.emo-row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin:16px 0;}
+.ec{background:var(--card);border:1px solid var(--bord);border-radius:14px;
+  padding:16px;font-size:40px;text-align:center;min-width:75px;
+  transition:transform .25s;cursor:default;}
+.ec:hover{transform:scale(1.12) rotate(5deg);}
+.emo-answer-row{display:flex;align-items:center;gap:10px;margin:8px 0;background:#ffffff07;
+  border-radius:10px;padding:10px 14px;border:1px solid var(--bord);}
+.emo-answer-row .emo-lbl{font-size:26px;width:36px;flex-shrink:0;}
+.emo-answer-row .emo-desc{font-size:11px;color:#64748b;flex:1;min-width:0;}
+.emo-answer-row input{flex:2;min-width:0;}
+
+/* ═══════════════════════════════════════════
+   ROOM 4 – MEMORY VAULT
+═══════════════════════════════════════════ */
+#sr4{background:radial-gradient(ellipse at 90% 80%,#001a0c,var(--bg) 65%);}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:14px;max-width:780px;width:100%;margin:14px 0;}
+.mc{background:var(--card);border:1px solid var(--bord);border-radius:16px;
+  padding:18px;text-align:center;transition:all .3s;position:relative;}
+.mc.open{border-color:var(--g);background:#10b98110;}
+.mc-lock{font-size:26px;margin-bottom:5px;}
+.mc-emo{font-size:40px;margin-bottom:8px;display:block;}
+.mc-q{color:#7a8099;font-size:12px;margin-bottom:10px;line-height:1.4;}
+.mopts{display:flex;flex-direction:column;gap:5px;}
+.mopt{padding:7px 10px;border:1px solid var(--bord);border-radius:7px;
+  background:#7c3aed0d;color:#dde0ff;cursor:pointer;font-size:12px;text-align:left;
+  transition:all .22s;}
+.mopt:hover:not([disabled]){background:#7c3aed25;}
+.mopt.right{background:#10b98120;border-color:var(--g);color:#6ee7b7;}
+.mopt.wrong{background:#ef444420;border-color:var(--r);}
+.mc-story{font-size:11px;color:#7a8099;font-style:italic;margin-top:8px;
+  line-height:1.55;display:none;border-top:1px solid var(--bord);padding-top:8px;}
+.mc-story.show{display:block;}
+.mc-corner{position:absolute;bottom:8px;right:10px;font-size:9px;
+  color:#7c3aed44;font-style:italic;line-height:1.3;max-width:90px;text-align:right;}
+
+/* ═══════════════════════════════════════════
+   ROOM 5 – SKILL CODES
+═══════════════════════════════════════════ */
+#sr5{background:radial-gradient(ellipse at 50% 5%,#1a1500,var(--bg) 65%);}
+.sgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;
+  max-width:640px;width:100%;margin:14px 0;}
+.sc{background:var(--card);border:1px solid var(--bord);border-radius:16px;
+  padding:20px;text-align:center;transition:all .3s;}
+.sc.done{border-color:var(--g);background:#10b98110;}
+.scode{font-size:24px;font-weight:900;letter-spacing:2px;
+  background:linear-gradient(135deg,var(--a),#f97316);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  margin-bottom:8px;}
+.sc.done .scode{background:linear-gradient(135deg,var(--g),var(--c));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.sh{font-size:11px;color:var(--a);min-height:14px;font-style:italic;margin:4px 0 8px;}
+
+/* ═══════════════════════════════════════════
+   ROOM 6 – WORLD MAP
+═══════════════════════════════════════════ */
+#sr6{background:radial-gradient(ellipse at 30% 90%,#00001f,var(--bg) 65%);}
+.mbox{max-width:720px;width:100%;}
+.msec{background:var(--card);border:1px solid var(--bord);border-radius:18px;
+  padding:22px;margin-bottom:18px;animation:glowPulse 5s ease-in-out infinite;}
+.msec h3{color:var(--pl);font-size:16px;margin-bottom:4px;}
+.msec .msub{color:#64748b;font-size:12px;margin-bottom:12px;}
+.cgrid2{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.cbtn2{padding:9px 14px;border:1px solid var(--bord);border-radius:9px;
+  background:#7c3aed0e;color:#dde0ff;cursor:pointer;font-size:13px;font-weight:600;
+  transition:all .22s;}
+.cbtn2:hover:not(.used){background:#7c3aed2a;transform:translateY(-2px);}
+.cbtn2.right{background:#10b98120;border-color:var(--g);color:#6ee7b7;}
+.cbtn2.wrong{background:#ef444420;border-color:var(--r);}
+.cbtn2.used{opacity:.4;pointer-events:none;}
+.fact-card{background:#10b98112;border:1px solid #10b98144;border-radius:12px;
+  padding:14px 16px;margin-top:12px;display:flex;align-items:flex-start;gap:12px;
+  animation:fadeUp .4s ease;}
+.fact-flag{font-size:42px;flex-shrink:0;}
+.fact-name{color:#6ee7b7;font-weight:700;font-size:15px;}
+.fact-txt{color:#94a3b8;font-size:12px;margin-top:3px;line-height:1.55;}
+
+/* ═══════════════════════════════════════════
+   FINAL ROOM
+═══════════════════════════════════════════ */
+#sfinal{background:radial-gradient(ellipse at 50% 50%,#1a0a30,var(--bg) 65%);}
+.fcard{max-width:540px;width:100%;}
+.flabel{display:block;color:#7a8099;font-size:12px;margin:14px 0 5px;font-weight:600;letter-spacing:.5px;}
+.reveal-wrap{display:none;max-width:540px;width:100%;margin-top:20px;}
+.reveal-card{background:#7c3aed18;border:1px solid var(--p);border-radius:18px;padding:26px;}
+.rv{padding:8px 12px;background:#ffffff08;border-radius:8px;margin:6px 0;font-size:13px;
+  display:flex;align-items:flex-start;gap:8px;}
+.rv-label{color:#64748b;min-width:100px;flex-shrink:0;}
+.rv-val{color:var(--c);font-weight:700;}
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════ */
+@media(max-width:540px){
+  .sgrid{grid-template-columns:1fr;}
+  .cgrid{grid-template-columns:repeat(2,1fr);}
+}
+@keyframes drift{from{transform:translateY(0) rotate(-5deg)}to{transform:translateY(-20px) rotate(5deg)}}
+</style>
+</head>
+<body>
+
+<!-- ─────────── CONFETTI ─────────── -->
+<canvas id="cvs"></canvas>
+
+<!-- ─────────── PROGRESS ─────────── -->
+<div id="prog-wrap"><div id="prog-fill"></div></div>
+<div id="prog-txt"></div>
+
+<!-- ─────────── MATH MODAL ─────────── -->
+<div id="m-overlay">
+  <div id="m-box">
+    <h3>🔐 Solve to Unlock Your Hint</h3>
+    <p>Answer correctly to receive the next clue</p>
+    <div id="m-q"></div>
+    <input class="inp" id="m-inp" type="number" placeholder="Your answer…">
+    <div id="m-fb"></div>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:12px;">
+      <button class="btn btn-p" onclick="checkMath()">✓ Submit</button>
+      <button class="btn btn-g" onclick="closeMath()">✕ Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     INTRO
+══════════════════════════════════════════════════════ -->
+<div class="screen active" id="si">
+  <div class="blob blob-a"></div><div class="blob blob-b"></div>
+  <div class="z">
+    <div class="float-ico">🔍</div>
+    <h1 class="grad">Escape Room:<br>Guess Who I Am</h1>
+    <p class="sub" style="max-width:400px;">Solve the clues to discover who I am.<br>Six rooms. Six mysteries. One identity.</p>
+    <button class="btn btn-p" style="font-size:16px;padding:15px 38px;" onclick="startGame()">🚪 Enter the Room</button>
+    <div class="stat-row">
+      <div class="stat">🧩<br>6 Rooms</div>
+      <div class="stat">🔐<br>Codes & Clues</div>
+      <div class="stat">💡<br>Math-Gated Hints</div>
+      <div class="stat">🎉<br>Confetti Rewards</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     ROOM 1 – THE CIPHER CHAMBER
+══════════════════════════════════════════════════════ -->
+<div class="screen" id="sr1">
+  <div class="blob blob-a"></div><div class="blob blob-b"></div>
+  <div class="z">
+    <div class="badge">Room 1 of 6</div>
+    <h2 class="grad">🔑 The Cipher Chamber</h2>
+    <p class="sub">Each letter is the first letter of something I love.<br>Decode all five to crack the chamber.</p>
+    <div class="card" style="max-width:740px;">
+      <p style="text-align:center;color:#3d4466;font-size:12px;margin-bottom:14px;">
+        Type the full word each letter stands for, then press Check ✓ &nbsp;|&nbsp; Use 💡 Hint to reveal one letter at a time
+      </p>
+      <div class="cgrid" id="r1g"></div>
+      <div class="fb" id="r1mfb"></div>
+      <div style="text-align:center;margin-top:14px;">
+        <button class="btn btn-g" style="font-size:12px;" onclick="revealAll1()">👁 Reveal All Answers</button>
+      </div>
+    </div>
+    <button class="btn btn-p btn-next" onclick="go(2)">Next Room →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     ROOM 2 – THE LABORATORY
+══════════════════════════════════════════════════════ -->
+<div class="screen" id="sr2">
+  <!-- scattered lab decor -->
+  <div class="lab-scatter" id="labScatter"></div>
+  <div class="blob blob-b"></div>
+  <div class="z">
+    <div class="badge">Room 2 of 6</div>
+    <h2 class="grad">⚗️ The Laboratory</h2>
+    <p class="sub">Look around this room carefully…<br>What subject do I love most?</p>
+    <div class="card">
+      <h3 style="text-align:center;font-size:17px;margin-bottom:14px;">What is my favorite subject?</h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:14px;">
+        <button class="cbtn" onclick="chkR2(this,'History')">📚 History</button>
+        <button class="cbtn" onclick="chkR2(this,'Math')">📐 Math</button>
+        <button class="cbtn" onclick="chkR2(this,'Science')">🔬 Science</button>
+        <button class="cbtn" onclick="chkR2(this,'Literature')">📖 Literature</button>
+        <button class="cbtn" onclick="chkR2(this,'Art')">🎨 Art</button>
+        <button class="cbtn" onclick="chkR2(this,'PE')">🏃 P.E.</button>
+      </div>
+      <div class="fb" id="r2fb"></div>
+      <div style="text-align:center;margin-top:12px;">
+        <button class="btn btn-a" onclick="reqHint('r2')">💡 Hint</button>
+        <div class="htxt" id="r2ht" style="text-align:center;margin-top:6px;"></div>
+      </div>
+      <div class="corner-tip">psst… look at what's decorating this room 🔭</div>
+    </div>
+    <button class="btn btn-p btn-next" onclick="go(3)">Next Room →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     ROOM 3 – THE PERSONALITY VAULT
+══════════════════════════════════════════════════════ -->
+<div class="screen" id="sr3">
+  <div class="blob blob-a"></div><div class="blob blob-c"></div>
+  <div class="z">
+    <div class="badge">Room 3 of 6</div>
+    <h2 class="grad">🌌 The Personality Vault</h2>
+    <p class="sub">Five emojis. Five clues about who I am.<br>What does each one say about my personality?</p>
+    <div class="emo-row">
+      <div class="ec">🪻</div>
+      <div class="ec">🗺️</div>
+      <div class="ec">✈️</div>
+      <div class="ec">🧰</div>
+      <div class="ec">🔍</div>
+    </div>
+    <div class="card" style="max-width:700px;">
+      <p style="color:#3d4466;font-size:12px;text-align:center;margin-bottom:14px;">
+        Give your best guess for what each emoji reveals about me ↓
+      </p>
+      <div class="emo-answer-row">
+        <span class="emo-lbl">🪻</span>
+        <span class="emo-desc">A lavender flower…</span>
+        <input class="inp" id="ea0" placeholder="What does this say about me?">
+      </div>
+      <div class="emo-answer-row">
+        <span class="emo-lbl">🗺️</span>
+        <span class="emo-desc">A world map…</span>
+        <input class="inp" id="ea1" placeholder="What does this say about me?">
+      </div>
+      <div class="emo-answer-row">
+        <span class="emo-lbl">✈️</span>
+        <span class="emo-desc">An airplane…</span>
+        <input class="inp" id="ea2" placeholder="What does this say about me?">
+      </div>
+      <div class="emo-answer-row">
+        <span class="emo-lbl">🧰</span>
+        <span class="emo-desc">A toolbox / craft supplies…</span>
+        <input class="inp" id="ea3" placeholder="What does this say about me?">
+      </div>
+      <div class="emo-answer-row">
+        <span class="emo-lbl">🔍</span>
+        <span class="emo-desc">A magnifying glass…</span>
+        <input class="inp" id="ea4" placeholder="What does this say about me?">
+      </div>
+      <div class="fb" id="r3fb"></div>
+      <div style="text-align:center;margin-top:14px;">
+        <button class="btn btn-p" onclick="chkR3()">✨ Submit</button>
+        <button class="btn btn-a" onclick="reqHint('r3')">💡 Hint</button>
+        <div class="htxt" id="r3ht" style="text-align:center;margin-top:6px;"></div>
+      </div>
+    </div>
+    <button class="btn btn-p btn-next" onclick="go(4)">Next Room →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     ROOM 4 – THE MEMORY VAULT
+══════════════════════════════════════════════════════ -->
+<div class="screen" id="sr4">
+  <div class="blob blob-a"></div><div class="blob blob-b"></div>
+  <div class="z">
+    <div class="badge">Room 4 of 6</div>
+    <h2 class="grad">🗝️ The Memory Vault</h2>
+    <p class="sub">Six locked memories. Use the emoji clue on each card<br>and choose the right answer to unlock the memory.</p>
+    <div class="mgrid" id="r4g"></div>
+    <button class="btn btn-p btn-next" onclick="go(5)">Next Room →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     ROOM 5 – SKILL CODE PANEL
+══════════════════════════════════════════════════════ -->
+<div class="screen" id="sr5">
+  <div class="blob blob-a"></div><div class="blob blob-c"></div>
+  <div class="z">
+    <div class="badge">Room 5 of 6</div>
+    <h2 class="grad">💻 The Skill Code Panel</h2>
+    <p class="sub">Four encrypted personality codes.<br>Decode each one — hints unlock after every wrong attempt.</p>
+    <div class="sgrid" id="r5g"></div>
+    <div class="fb" id="r5mfb"></div>
+    <button class="btn btn-p btn-next" onclick="go(6)">Next Room →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     ROOM 6 – WORLD MAP ROOM
+══════════════════════════════════════════════════════ -->
+<div class="screen" id="sr6">
+  <div class="blob blob-a"></div><div class="blob blob-b"></div>
+  <div class="z">
+    <div class="badge">Room 6 of 6</div>
+    <h2 class="grad">🌍 The World Map Room</h2>
+    <p class="sub">Where have I been? Where do I dream of going?<br>Click to make your guesses!</p>
+    <div class="mbox">
+      <div class="msec">
+        <h3>🛫 Places I've Been <span style="color:#3d4466;font-size:12px;font-weight:400;">(find all 5)</span></h3>
+        <p class="msub">Select the countries I've actually visited from the list below:</p>
+        <div class="cgrid2" id="v-grid"></div>
+        <div id="v-fb" style="text-align:center;font-size:13px;color:#6ee7b7;margin-top:10px;font-weight:700;"></div>
+        <div id="v-facts"></div>
+      </div>
+      <div class="msec">
+        <h3>🌟 Dream Destinations <span style="color:#3d4466;font-size:12px;font-weight:400;">(find all 5)</span></h3>
+        <p class="msub">Select the places I dream of visiting one day:</p>
+        <div class="cgrid2" id="d-grid"></div>
+        <div id="d-fb" style="text-align:center;font-size:13px;color:#6ee7b7;margin-top:10px;font-weight:700;"></div>
+        <div id="d-facts"></div>
+      </div>
+    </div>
+    <button class="btn btn-p btn-next" onclick="go('final')">🎊 Final Room →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     FINAL ROOM – THE ORACLE'S MIRROR
+══════════════════════════════════════════════════════ -->
+<div class="screen" id="sfinal">
+  <div class="blob blob-a"></div><div class="blob blob-b"></div>
+  <div class="z">
+    <div class="badge">🏆 Final Challenge</div>
+    <h2 class="grad">🪞 The Oracle's Mirror</h2>
+    <p class="sub">You've decoded all the clues. Now reflect everything<br>you've discovered and tell me who I am…</p>
+    <div class="card fcard">
+      <div style="text-align:center;font-size:46px;margin-bottom:10px;">⭐🎯🔓</div>
+      <label class="flabel">🎓 What career suits me best?</label>
+      <textarea class="inp" id="f-career" placeholder="Based on my love for travel, science, poetry, DIY, baking and my creative curious personality… I think your ideal career is…"></textarea>
+      <label class="flabel">✨ One word that describes me:</label>
+      <input class="inp" id="f-word" type="text" placeholder="e.g. Adventurous, Radiant, Whimsical…">
+      <label class="flabel">🦸 A superpower that fits me:</label>
+      <input class="inp" id="f-power" type="text" placeholder="e.g. Teleportation, Time travel, Infinite creativity…">
+      <label class="flabel">🍂 What season matches my vibe?</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
+        <button class="cbtn" id="fs-spring" onclick="pickSeason('Spring 🌸')">🌸 Spring</button>
+        <button class="cbtn" id="fs-summer" onclick="pickSeason('Summer ☀️')">☀️ Summer</button>
+        <button class="cbtn" id="fs-autumn" onclick="pickSeason('Autumn 🍂')">🍂 Autumn</button>
+        <button class="cbtn" id="fs-winter" onclick="pickSeason('Winter ❄️')">❄️ Winter</button>
+      </div>
+      <div id="season-sel" style="color:#64748b;font-size:12px;margin-top:6px;"></div>
+      <label class="flabel">🎭 What vibe do I give off?</label>
+      <input class="inp" id="f-vibe" type="text" placeholder="e.g. Cozy bookstore energy, Golden hour explorer vibes…">
+      <div style="text-align:center;margin-top:20px;">
+        <button class="btn btn-p" style="font-size:16px;padding:14px 34px;" onclick="submitFinal()">🎊 Submit & Reveal!</button>
+      </div>
+    </div>
+
+    <div class="reveal-wrap" id="final-reveal">
+      <div style="text-align:center;font-size:56px;margin:14px 0;">🎉✨🎊</div>
+      <div class="reveal-card">
+        <h3 style="color:var(--pl);font-size:20px;text-align:center;margin-bottom:12px;">You cracked the Escape Room! 🔓</h3>
+        <p style="color:#64748b;font-size:13px;text-align:center;line-height:1.75;margin-bottom:16px;">
+          You now know me better than most people do! I'm a curious, creative soul who loves to travel, swim, write poetry, build things with my hands, and bake. Science is my favorite subject and the world is my playground.
+        </p>
+        <div class="rv"><span class="rv-label">🎓 Career pick:</span><span class="rv-val" id="rv-career"></span></div>
+        <div class="rv"><span class="rv-label">✨ One word:</span><span class="rv-val" id="rv-word"></span></div>
+        <div class="rv"><span class="rv-label">🦸 Superpower:</span><span class="rv-val" id="rv-power"></span></div>
+        <div class="rv"><span class="rv-label">🍂 My season:</span><span class="rv-val" id="rv-season"></span></div>
+        <div class="rv"><span class="rv-label">🎭 My vibe:</span><span class="rv-val" id="rv-vibe"></span></div>
+      </div>
+      <div style="text-align:center;margin-top:16px;">
+        <button class="btn btn-g" onclick="restart()">🔄 Play Again</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════════════ -->
+<script>
+/* ─── MATH STATE ───────────────────────────────── */
+let mAttempts=0, mAnswer=0, mCallback=null;
+
+/* ─── NAVIGATION ───────────────────────────────── */
+let chosenSeason='';
+const screens=['si','sr1','sr2','sr3','sr4','sr5','sr6','sfinal'];
+
+function startGame(){go(1);}
+function go(room){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  const id=room==='final'?'sfinal':`sr${room}`;
+  document.getElementById(id).classList.add('active');
+  const n=room==='final'?7:+room;
+  document.getElementById('prog-wrap').style.display='block';
+  document.getElementById('prog-txt').style.display='block';
+  document.getElementById('prog-fill').style.width=(n/7*100)+'%';
+  document.getElementById('prog-txt').textContent=room==='final'?'Final Room 🏆':`Room ${room} / 6`;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function restart(){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('si').classList.add('active');
+  document.getElementById('prog-wrap').style.display='none';
+  document.getElementById('prog-txt').style.display='none';
+}
+
+/* ─── MATH MODAL ───────────────────────────────── */
+function randInt(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+function makeQ(){
+  const t=randInt(0,3);
+  if(t===0){let x=randInt(15,65),y=randInt(10,45);return{q:`${x} + ${y} = ?`,a:x+y};}
+  if(t===1){let x=randInt(3,12),y=randInt(3,9);return{q:`${x} × ${y} = ?`,a:x*y};}
+  if(t===2){let d=randInt(2,9),x=d*randInt(2,11);return{q:`${x} ÷ ${d} = ?`,a:x/d};}
+  let x=randInt(30,80),y=randInt(5,25);return{q:`${x} − ${y} = ?`,a:x-y};
+}
+function reqHint(tag,extra){
+  const m=makeQ();
+  mAnswer=m.a; mAttempts=0;
+  mCallback=()=>giveHint(tag,extra);
+  document.getElementById('m-q').textContent=m.q;
+  document.getElementById('m-inp').value='';
+  document.getElementById('m-fb').innerHTML='';
+  document.getElementById('m-overlay').classList.add('on');
+  setTimeout(()=>document.getElementById('m-inp').focus(),120);
+}
+document.getElementById('m-inp').addEventListener('keydown',e=>{if(e.key==='Enter')checkMath();});
+function checkMath(){
+  const v=+document.getElementById('m-inp').value;
+  const fb=document.getElementById('m-fb');
+  if(isNaN(v)||document.getElementById('m-inp').value===''){
+    fb.style.color='#fca5a5';fb.innerHTML='Please enter a number!';return;
+  }
+  if(v===mAnswer){
+    fb.style.color='#6ee7b7';fb.innerHTML='✅ Correct! Here comes your hint…';
+    setTimeout(()=>{closeMath();if(mCallback)mCallback();},800);
+  } else {
+    mAttempts++;
+    document.getElementById('m-inp').value='';
+    document.getElementById('m-inp').focus();
+    if(mAttempts===1){
+      fb.style.color='#fca5a5';
+      fb.innerHTML='❌ bro... seriously... you made math go and cry. 😭<br>Try again!';
+    } else {
+      fb.style.color='#fcd34d';
+      fb.innerHTML='😂 wow.. umm.. your answers are coming from different universes. 🌌<br>One more shot!';
+    }
+  }
+}
+function closeMath(){document.getElementById('m-overlay').classList.remove('on');}
+
+/* ─── HINT DISPATCHER ─────────────────────────── */
+const r2Hints=['Think about what all this equipment is actually used for…','It involves experiments, hypotheses, and discoveries…','Think: ⚗️🔬🧪 — which school subject uses these?','It starts with "Sc…"'];
+const r3Hints=[
+  '🪻 = She loves the color purple and has a gentle, artistic side.',
+  '🗺️ = She loves exploring the world and learning about different cultures.',
+  '✈️ = She loves to travel — airplanes are practically her second home!',
+  '🧰 = She loves DIY crafts — building and making things with her hands.',
+  '🔍 = She is endlessly curious, always asking questions and discovering new things.'
+];
+let r2HI=0,r3HI=0;
+function giveHint(tag,extra){
+  if(tag==='r2'){
+    const d=document.getElementById('r2ht');
+    d.textContent=r2HI<r2Hints.length?'💡 '+r2Hints[r2HI++]:'✅ Answer: Science';
+  } else if(tag==='r3'){
+    const d=document.getElementById('r3ht');
+    d.textContent=r3HI<r3Hints.length?'💡 '+r3Hints[r3HI++]:'✅ All hints used!';
+  } else if(tag==='r1'){
+    // extra = index
+    const it=r1d[extra];
+    if(r1HI[extra]<it.hints.length){
+      document.getElementById(`r1h${extra}`).textContent='💡 '+it.hints[r1HI[extra]++]+'…';
+    } else {
+      document.getElementById(`r1h${extra}`).textContent='✅ '+it.ans;
+    }
+  } else if(tag==='r5'){
+    // extra = index
+    const sk=r5d[extra];
+    if(r5HI[extra]<sk.hints.length){
+      document.getElementById(`r5h${extra}`).textContent='💡 '+sk.hints[r5HI[extra]++];
+    } else {
+      document.getElementById(`r5h${extra}`).textContent='✅ Answer: '+sk.ans;
+    }
+  }
+}
+
+/* ──────────────────────────────────────────────
+   ROOM 1 – CIPHER
+────────────────────────────────────────────── */
+const r1d=[
+  {l:'T',ans:'Traveling',hints:['T','Tr','Tra','Trav','Trave','Travel','Traveli','Travelin']},
+  {l:'S',ans:'Swimming',hints:['S','Sw','Swi','Swim','Swimm','Swimmi','Swimmin']},
+  {l:'P',ans:'Poetry',hints:['P','Po','Poe','Poet','Poetr']},
+  {l:'D',ans:'DIY Crafts',hints:['D','DI','DIY','DIY ','DIY C','DIY Cr','DIY Cra','DIY Craf']},
+  {l:'B',ans:'Baking',hints:['B','Ba','Bak','Baki','Bakin']}
+];
+let r1HI=[0,0,0,0,0],r1S=[false,false,false,false,false];
+
+function buildR1(){
+  const g=document.getElementById('r1g');
+  r1d.forEach((it,i)=>{
+    g.innerHTML+=`<div class="ci" id="r1c${i}">
+      <div class="cl">${it.l}</div>
+      <div class="htxt" id="r1h${i}"></div>
+      <input class="inp" id="r1i${i}" placeholder="Full word…"
+        onkeydown="if(event.key==='Enter')chkR1(${i})"
+        style="font-size:13px;margin-bottom:8px;">
+      <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn btn-p" onclick="chkR1(${i})" style="padding:6px 12px;font-size:12px;">✓</button>
+        <button class="btn btn-a" onclick="reqHint('r1',${i})" style="padding:6px 12px;font-size:12px;">💡</button>
+      </div>
+      <div class="fb" id="r1f${i}" style="font-size:12px;margin-top:6px;"></div>
+    </div>`;
+  });
+}
+function chkR1(i){
+  if(r1S[i])return;
+  const v=document.getElementById(`r1i${i}`).value.trim().toLowerCase();
+  const ok=r1d[i].ans.toLowerCase();
+  const fb=document.getElementById(`r1f${i}`);
+  if(v===ok){
+    fb.className='fb ok';fb.textContent='🎉 Good job! That\'s right!';
+    r1S[i]=true;
+    document.getElementById(`r1c${i}`).classList.add('done');
+    document.getElementById(`r1h${i}`).textContent='✅ '+r1d[i].ans;
+    burst();
+    if(r1S.every(Boolean)){
+      const m=document.getElementById('r1mfb');
+      m.className='fb ok';m.textContent='🔓 You cracked all 5 codes! Outstanding!';burst();
+    }
+  } else {
+    fb.className='fb err';fb.textContent='❌ Not quite — try again or use 💡 Hint!';
+  }
+}
+function revealAll1(){
+  r1d.forEach((it,i)=>{
+    document.getElementById(`r1h${i}`).textContent='✅ '+it.ans;
+    const f=document.getElementById(`r1f${i}`);
+    f.className='fb ok';f.textContent='Answer: '+it.ans;
+  });
+}
+
+/* ──────────────────────────────────────────────
+   ROOM 2 – LAB
+────────────────────────────────────────────── */
+function buildLab(){
+  const emojis=['⚗️','🔬','🧪','🧫','🔭','📡','🧲','💉','🩺','🌡️','🧬','📊'];
+  const wrap=document.getElementById('labScatter');
+  emojis.forEach((e,i)=>{
+    const s=document.createElement('span');
+    s.textContent=e;
+    s.style.left=randInt(2,92)+'%';
+    s.style.top=randInt(5,90)+'%';
+    s.style.animationDelay=(i*0.4)+'s';
+    s.style.fontSize=randInt(14,20)+'px';
+    wrap.appendChild(s);
+  });
+}
+function chkR2(btn,choice){
+  const fb=document.getElementById('r2fb');
+  if(choice==='Science'){
+    document.querySelectorAll('#sr2 .cbtn').forEach(b=>{b.disabled=true;if(b.textContent.includes('Science'))b.classList.add('right');});
+    fb.className='fb ok';fb.textContent='🎉 Yes! Science is my all-time favorite! Experiments, discoveries, curiosity — that\'s my world!';
+    burst();
+  } else {
+    btn.classList.add('wrong');setTimeout(()=>btn.classList.remove('wrong'),800);
+    fb.className='fb err';fb.textContent='❌ Not quite! Look around the room for clues…';
+  }
+}
+
+/* ──────────────────────────────────────────────
+   ROOM 3 – PERSONALITY
+────────────────────────────────────────────── */
+function chkR3(){
+  const vals=[0,1,2,3,4].map(i=>document.getElementById(`ea${i}`).value.trim().toLowerCase());
+  const keys=[['purple','lavend','color','colour','gentle','artis','calm'],
+    ['travel','world','explor','map','cultur','global'],
+    ['fly','flight','travel','plane','airplane','journey','adventur'],
+    ['diy','craft','build','make','creat','hand','tool','construct'],
+    ['curio','question','discov','wonder','learn','explor','invest']];
+  const fb=document.getElementById('r3fb');
+  let hits=0;
+  vals.forEach((v,i)=>{if(keys[i].some(k=>v.includes(k)))hits++;});
+  if(hits>=4){fb.className='fb ok';fb.textContent='✨ Brilliant! You read me perfectly — every single emoji!';burst();}
+  else if(hits>=2){fb.className='fb warm';fb.textContent='🔥 You\'re getting warm! '+(5-hits)+' emoji(s) still need more thought…';}
+  else{fb.className='fb err';fb.textContent='💭 Think more literally — what does each emoji represent in real life?';}
+}
+
+/* ──────────────────────────────────────────────
+   ROOM 4 – MEMORY VAULT
+────────────────────────────────────────────── */
+const r4d=[
+  {emo:'🚗',q:'What memory does 🚗 hint at?',
+   opts:['Beach vacation with friends','Road trip with family','Camping alone in the woods','Birthday party at home'],
+   ok:1,story:'Driving through unknown roads with family, singing to songs we barely knew, stopping wherever looked interesting…'},
+  {emo:'☀️',q:'What does ☀️ remind you of with family?',
+   opts:['Winter break studying','Summer with all my cousins','A rainy day indoors','Holiday with just my parents'],
+   ok:1,story:'Endless summer days with all my cousins — chaotic, loud, full of laughter, and absolutely unforgettable…'},
+  {emo:'🎒',q:'What school-related memory could 🎒 represent?',
+   opts:['First day of school ever','Staying after class to study','A class trip with classmates','A school spelling bee'],
+   ok:2,story:'That feeling of exploring somewhere new with classmates — chaperoned freedom, inside jokes, and shared wonder…'},
+  {emo:'🎓',q:'What milestone does 🎓 represent?',
+   opts:['Getting a good grade','Joining a new school','My graduation ceremony','Finishing a book'],
+   ok:2,story:'Standing there in a cap and gown, heart full, realizing how far I\'d come — one of the most emotional days…'},
+  {emo:'🌅',q:'What childhood memory matches 🌅?',
+   opts:['Waking up early for sunrise','Reading by the window at dusk','Playing outside till sunset as a kid','A late-night bonfire'],
+   ok:2,story:'Running outside until the sky turned orange and pink — completely free, completely present, skin warm from the sun…'},
+  {emo:'✈️',q:'What "first" experience does ✈️ unlock?',
+   opts:['First bicycle ride','First day of a new job','First airplane ride','First time cooking alone'],
+   ok:2,story:'Pressing my nose against the tiny window, watching the ground shrink away, clouds at eye level — pure magic…'}
+];
+let r4S=[false,false,false,false,false,false];
+
+function buildR4(){
+  const g=document.getElementById('r4g');
+  r4d.forEach((m,i)=>{
+    const opts=m.opts.map((o,oi)=>
+      `<button class="mopt" id="mo${i}${oi}" onclick="chkMem(${i},${oi})">${o}</button>`).join('');
+    g.innerHTML+=`<div class="mc" id="mc${i}">
+      <div class="mc-lock" id="ml${i}">🔒</div>
+      <span class="mc-emo">${m.emo}</span>
+      <p class="mc-q">${m.q}</p>
+      <div class="mopts">${opts}</div>
+      <p class="mc-story" id="ms${i}">"${m.story}"</p>
+      <div class="mc-corner">Use the emoji above as your clue 💡</div>
+    </div>`;
+  });
+}
+function chkMem(ci,oi){
+  if(r4S[ci])return;
+  if(oi===r4d[ci].ok){
+    document.getElementById(`mo${ci}${oi}`).classList.add('right');
+    document.getElementById(`ml${ci}`).textContent='🔓';
+    document.getElementById(`mc${ci}`).classList.add('open');
+    document.getElementById(`ms${ci}`).classList.add('show');
+    r4S[ci]=true;
+    for(let j=0;j<r4d[ci].opts.length;j++){
+      const b=document.getElementById(`mo${ci}${j}`);
+      b.disabled=true;if(j!==oi)b.style.opacity='.3';
+    }
+    burst();
+  } else {
+    const b=document.getElementById(`mo${ci}${oi}`);
+    b.classList.add('wrong');setTimeout(()=>b.classList.remove('wrong'),700);
+  }
+}
+
+/* ──────────────────────────────────────────────
+   ROOM 5 – SKILL CODES
+────────────────────────────────────────────── */
+const r5d=[
+  {code:'CR8',ans:'Creative',hints:[
+    'Think about art, imagination, inventing ideas…',
+    'Someone who makes original things — paintings, poems, recipes…',
+    'It starts with "Cre…"',
+    'C-R-E-A-T-I-V-E 🎨']},
+  {code:'∞AD',ans:'Adaptable',hints:[
+    'Think about being flexible and adjusting to change…',
+    'Like water — it takes the shape of any container…',
+    'It starts with "Ada…"',
+    'A-D-A-P-T-A-B-L-E 🌊']},
+  {code:'+POS',ans:'Positive',hints:[
+    'The "+" symbol is a big hint here…',
+    'Always seeing the bright side, radiating good energy…',
+    'It starts with "Pos…"',
+    'P-O-S-I-T-I-V-E ☀️']},
+  {code:'◉DTL',ans:'Detail-oriented',hints:[
+    'Think about someone who is precise, careful, and thorough…',
+    'Nothing escapes their attention — they notice everything…',
+    'It starts with "Det…"',
+    'D-E-T-A-I-L-oriented 🔎']}
+];
+let r5HI=[0,0,0,0],r5S=[false,false,false,false];
+
+function buildR5(){
+  const g=document.getElementById('r5g');
+  r5d.forEach((sk,i)=>{
+    g.innerHTML+=`<div class="sc" id="sc${i}">
+      <div class="scode">${sk.code}</div>
+      <p style="color:#3d4466;font-size:11px;margin-bottom:4px;">What does this code mean?</p>
+      <div class="sh" id="r5h${i}"></div>
+      <input class="inp" id="r5i${i}" placeholder="Type your guess…"
+        onkeydown="if(event.key==='Enter')chkR5(${i})"
+        style="font-size:13px;">
+      <div style="display:flex;gap:5px;justify-content:center;margin-top:8px;flex-wrap:wrap;">
+        <button class="btn btn-p" onclick="chkR5(${i})" style="padding:6px 12px;font-size:12px;">✓ Check</button>
+        <button class="btn btn-a" onclick="reqHint('r5',${i})" style="padding:6px 12px;font-size:12px;">💡 Hint</button>
+      </div>
+      <div class="fb" id="r5f${i}" style="font-size:12px;margin-top:6px;"></div>
+    </div>`;
+  });
+}
+function chkR5(i){
+  if(r5S[i])return;
+  const v=document.getElementById(`r5i${i}`).value.trim().toLowerCase();
+  const ok=r5d[i].ans.toLowerCase();
+  const fb=document.getElementById(`r5f${i}`);
+  const d=lev(v,ok);
+  const alt=ok.includes('-')&&v===ok.replace('-',' ');
+  if(v===ok||alt){
+    fb.className='fb ok';fb.textContent='🎉 Correct! '+r5d[i].ans+'!';
+    r5S[i]=true;
+    document.getElementById(`sc${i}`).classList.add('done');
+    document.getElementById(`r5h${i}`).textContent='✅ '+r5d[i].ans;
+    burst();
+    if(r5S.every(Boolean)){
+      const m=document.getElementById('r5mfb');
+      m.className='fb ok';m.textContent='🔓 You decoded all 4 personality codes! You\'re a genius!';burst();
+    }
+  } else if(d<=3&&v.length>3){
+    fb.className='fb warm';fb.textContent='🔥 So close! You\'re almost there!';
+  } else {
+    fb.className='fb err';fb.textContent='❌ Not quite — use a 💡 Hint for the next clue!';
+  }
+}
+function lev(a,b){
+  const m=a.length,n=b.length;
+  const dp=Array.from({length:m+1},(_,i)=>Array.from({length:n+1},(_,j)=>i===0?j:j===0?i:0));
+  for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)
+    dp[i][j]=a[i-1]===b[j-1]?dp[i-1][j-1]:1+Math.min(dp[i-1][j],dp[i][j-1],dp[i-1][j-1]);
+  return dp[m][n];
+}
+
+/* ──────────────────────────────────────────────
+   ROOM 6 – WORLD MAP
+────────────────────────────────────────────── */
+const visitOk=['Syria','Lebanon','United States','Turkey','Saudi Arabia'];
+const visitAll=['Syria','Lebanon','United States','Turkey','Saudi Arabia','France','Egypt','UAE','Italy','Greece'];
+const dreamOk=['Hawaii','Japan','Iceland','Switzerland','Morocco'];
+const dreamAll=['Hawaii','Japan','Iceland','Switzerland','Morocco','Australia','Brazil','Maldives','New Zealand','Spain'];
+
+const flags={
+  Syria:'🇸🇾',Lebanon:'🇱🇧','United States':'🇺🇸',Turkey:'🇹🇷','Saudi Arabia':'🇸🇦',
+  France:'🇫🇷',Egypt:'🇪🇬',UAE:'🇦🇪',Italy:'🇮🇹',Greece:'🇬🇷',
+  Hawaii:'🌺',Japan:'🇯🇵',Iceland:'🇮🇸',Switzerland:'🇨🇭',Morocco:'🇲🇦',
+  Australia:'🇦🇺',Brazil:'🇧🇷',Maldives:'🏝️','New Zealand':'🇳🇿',Spain:'🇪🇸'
+};
+const facts={
+  Syria:'Damascus is one of the oldest continuously inhabited cities in the world — over 11,000 years old!',
+  Lebanon:'Lebanon has more ancient Roman ruins than any country outside of Italy!',
+  'United States':'The U.S. spans 6 time zones and has the world\'s largest economy!',
+  Turkey:'Istanbul is the only city in the world that sits on two continents — Europe and Asia!',
+  'Saudi Arabia':'Saudi Arabia is home to Mecca, Islam\'s holiest city, visited by millions every year!',
+  Hawaii:'Hawaii is the only U.S. state made entirely of islands — 137 of them!',
+  Japan:'Japan has over 6,800 islands and the world\'s oldest company, founded in 578 AD!',
+  Iceland:'Iceland runs on nearly 100% renewable energy from geothermal and hydro sources!',
+  Switzerland:'Switzerland has 4 official languages: German, French, Italian, and Romansh!',
+  Morocco:'Morocco is home to the world\'s oldest university — the University of al-Qarawiyyin, founded in 859 AD!'
+};
+let vC=0,dC=0;
+
+function buildR6(){
+  fillGrid('v-grid',shuffle([...visitAll]),visitOk,'v');
+  fillGrid('d-grid',shuffle([...dreamAll]),dreamOk,'d');
+}
+function fillGrid(id,opts,ok,prefix){
+  const c=document.getElementById(id);
+  opts.forEach(country=>{
+    const k=country.replace(/\s/g,'-');
+    c.innerHTML+=`<button class="cbtn2" id="${prefix}-${k}" onclick="chkCtry('${country}','${prefix}')">${flags[country]||'🌍'} ${country}</button>`;
+  });
+}
+function chkCtry(country,prefix){
+  const k=country.replace(/\s/g,'-');
+  const btn=document.getElementById(`${prefix}-${k}`);
+  if(btn.classList.contains('right')||btn.classList.contains('used'))return;
+  const ok=prefix==='v'?visitOk:dreamOk;
+  const fbId=prefix==='v'?'v-fb':'d-fb';
+  const factsId=prefix==='v'?'v-facts':'d-facts';
+  if(ok.includes(country)){
+    btn.classList.add('right','used');
+    if(prefix==='v'){vC++;document.getElementById(fbId).textContent=vC===ok.length?`🎉 You found all 5 countries I've visited!`:`✅ Correct! ${vC} / 5 found!`;}
+    else{dC++;document.getElementById(fbId).textContent=dC===ok.length?`🌟 You found all 5 of my dream destinations!`:`✅ Correct! ${dC} / 5 found!`;}
+    // show fact card
+    const fact=facts[country]||'';
+    document.getElementById(factsId).innerHTML+=`
+      <div class="fact-card">
+        <div class="fact-flag">${flags[country]||'🌍'}</div>
+        <div><div class="fact-name">${country}</div><div class="fact-txt">🌐 ${fact}</div></div>
+      </div>`;
+    if((prefix==='v'&&vC===ok.length)||(prefix==='d'&&dC===ok.length))burst();
+  } else {
+    btn.classList.add('wrong');setTimeout(()=>btn.classList.remove('wrong'),600);
+  }
+}
+
+/* ──────────────────────────────────────────────
+   FINAL ROOM
+────────────────────────────────────────────── */
+function pickSeason(s){
+  chosenSeason=s;
+  document.querySelectorAll('#sfinal .cbtn').forEach(b=>b.classList.remove('right'));
+  event.target.classList.add('right');
+  document.getElementById('season-sel').textContent='Selected: '+s;
+}
+function submitFinal(){
+  const career=document.getElementById('f-career').value.trim();
+  const word=document.getElementById('f-word').value.trim();
+  const power=document.getElementById('f-power').value.trim();
+  const vibe=document.getElementById('f-vibe').value.trim();
+  if(!career||!word){alert('Please fill in at least the career and one-word fields!');return;}
+  document.getElementById('rv-career').textContent=career;
+  document.getElementById('rv-word').textContent=word;
+  document.getElementById('rv-power').textContent=power||'You didn\'t pick one!';
+  document.getElementById('rv-season').textContent=chosenSeason||'No season selected';
+  document.getElementById('rv-vibe').textContent=vibe||'You didn\'t describe it!';
+  document.getElementById('final-reveal').style.display='block';
+  burst();burst();
+  document.getElementById('final-reveal').scrollIntoView({behavior:'smooth'});
+}
+
+/* ──────────────────────────────────────────────
+   CONFETTI
+────────────────────────────────────────────── */
+function burst(){
+  const cv=document.getElementById('cvs');
+  cv.width=innerWidth;cv.height=innerHeight;
+  const ctx=cv.getContext('2d');
+  const cols=['#7c3aed','#06b6d4','#f59e0b','#10b981','#ef4444','#a78bfa','#fcd34d','#f9a8d4','#67e8f9'];
+  const pts=Array.from({length:180},()=>({
+    x:Math.random()*cv.width,y:-15,
+    vx:(Math.random()-.5)*6,vy:Math.random()*5+2,
+    col:cols[~~(Math.random()*cols.length)],
+    s:Math.random()*9+4,r:Math.random()*360,
+    rs:(Math.random()-.5)*14,circ:Math.random()>.5
+  }));
+  let fr=0;
+  (function anim(){
+    ctx.clearRect(0,0,cv.width,cv.height);
+    pts.forEach(p=>{
+      p.x+=p.vx;p.y+=p.vy;p.vy+=.1;p.r+=p.rs;
+      ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.r*Math.PI/180);
+      ctx.fillStyle=p.col;ctx.globalAlpha=Math.max(0,1-fr/115);
+      if(p.circ){ctx.beginPath();ctx.arc(0,0,p.s/2,0,Math.PI*2);ctx.fill();}
+      else ctx.fillRect(-p.s/2,-p.s/4,p.s,p.s/2);
+      ctx.restore();
+    });
+    if(++fr<115)requestAnimationFrame(anim);
+    else ctx.clearRect(0,0,cv.width,cv.height);
+  })();
+}
+
+/* ──────────────────────────────────────────────
+   UTIL
+────────────────────────────────────────────── */
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=~~(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+/* ──────────────────────────────────────────────
+   INIT
+────────────────────────────────────────────── */
+buildR1();buildLab();buildR4();buildR5();buildR6();
+</script>
+</body>
+</html>
